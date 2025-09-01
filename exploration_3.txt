@@ -1,0 +1,72 @@
+14. What was the average time in minutes it took for each driver to arrive at the fasoos HQ to pickup the order? 
+
+select driver_id, sum(diff)/count(order_id) avg_mins from 
+(select * from
+(select *,row_number() over(partition by order_id order by diff) rnk from
+(select a.order_id,a.customer_id,a.roll_id,a.not_include_items,a.extra_items_included,a.order_date, 
+b.driver_id,b.pickup_time,b.distance,b.duration,b.cancellation,datediff(minute,a.order_date,b.pickup_time) diff 
+from customer_orders a inner join driver_order b on a.order_id=b.order_id 
+where b.pickup_time is not null)a) b where rnk=1)c 
+group by driver_id;
+
+
+15. Is there any relationship between the number of rolls and how long the order takes to prepare?
+
+select order_id,count(roll_id) cnt,sum(diff)/count(roll_id) tym from
+(select a.order_id,a.customer_id,a.roll_id,a.not_include_items,a.extra_items_included,a.order_date, 
+b.driver_id,b.pickup_time,b.distance,b.duration,b.cancellation, datediff(minute,a.order_date,b.pickup_time) diff 
+from customer_orders a inner join driver_order b on a.order_id=b.order_id 
+where b.pickup_time is not null)a 
+group by order_id;
+
+
+16. What was the average distance travelled for each customer?
+
+select customer_id, sum(distance)/count(order_id) from 
+(select * from
+(select *,row_number() over(partition by order_id order by diff) rnk from
+(
+select a.order_id,a.customer_id,a.roll_id,a.not_include_items,a.extra_items_included,a.order_date,
+b.driver_id,b.pickup_time,
+cast(trim(replace(lower(b.distance),'km','')) as decimal(4,2)) distance,
+b.duration, b.cancellation,datediff(minute,a.order_date,b.pickup_time) diff 
+from customer_orders a inner join driver_order b on a.order_id=b.order_id 
+where b.pickup_time is not null
+)a)b
+where rnk=1)c 
+group by customer_id;
+
+
+18. What was the difference between the longest and shortest delivery times for all orders?
+
+select max(duration) - min(duration) diff from 
+( select cast(case when duration like'%min%' then left(duration,charindex('m' ,duration)-1) else
+duration end as integer)as duration from 
+driver_order where duration is not null)a;
+
+
+19. What was the average speed for each driver for each delivery and do you notice any trend for these values?
+speed=d/t
+
+select a.order_id,a.driver_id,a.distance/a.duration speed,b.cnt from
+(select order_id, driver_id, cast(trim(replace(lower(distance), 'km','')) as decimal(4,2)) distance 
+,cast(case when duration like "%min%' then left(duration, charindex('m' ,duration)-1) else
+duration end as integer)as duration from driver_order where distance is not null)a inner join
+(select order_id,count(roll_id) cnt from customer_orders group by order_id)b on a.order_id=b.order_id;
+
+
+20. What is the successful delivery percentage for each driver?
+sdp= total orders succesfuly delivered/ total orders taken
+
+select driver_id, s*1.0/t cancelled_per from
+(select driver_id, sum(can_per) s, count(driver_id) t from
+(select driver_id, case when lower (cancellation) like '%cancel%' then 0 else 1 end as can_per from driver_order)a 
+group by driver_id)b;
+
+
+
+
+
+//////////////////////////////////////////////////////END OF THE PROJECT/////////////////////////////////////////////
+
+////////////////////////////////////////////////////THANK YOU////////////////////////////////////////////////////////

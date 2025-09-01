@@ -1,0 +1,58 @@
+//////////////////////////////////////Faasos Exploration SQL Project///////////////////////////////////////////////////
+
+A. roll Metrics
+B. driver and Customer Experience
+C. Ingredient Optimisation
+D. Pricing and Ratings
+
+A. roll Metrics
+
+
+1. How many rolls were ordered?
+
+select count(roll_id) from customer_orders;
+
+
+2. How many unique customer orders were made?
+
+select count(distinct customer_id) from customer _orders;
+
+
+3. How many successful orders were delivered by each driver?
+
+select driver_id ,count(distinct order_id) from driver_order where cancellation not in ('Cancellation', 'Customer Cancellation')
+group by driver_id;
+
+
+4. How many of each type of roll was delivered? 
+
+select roll_id, count(roll_id) from 
+customer_orders where order_id in 
+( select order_id from
+(select ",case when cancellation in ('Cancellation', 'Customer Cancellation') then 'c' else 'nc' end as order_cancel_details from driver_order)a 
+where order_cancel_details= "nc")
+ group by roll_id;
+
+
+5. How many Veg and Non Veg Rolls were ordered by each customer?
+
+select a.*,b.roll_name from
+(
+select customer_id,roll_id, count(roll_id) cnt 
+from customer_orders
+group by customer_id,roll_id)a inner join rolls b on a.roll_id=b.roll_id;
+
+
+6.What was the maximum number of rolls delivered in a single order?
+
+select * from
+(
+select *,rank() over(order by cnt desc) rnk from
+select order_id,count(roll_ id) cnt
+from(
+select * from customer_orders where order_id in (
+select order_id from
+(select *,case when cancellation in ('Cancellation', 'Customer Cancellation") then 'c' else 'nc' end as order_cancel_details from driver_order)a 
+where order_cancel_details='nc'))b 
+group by order_ id 
+)c)d where rnk=1;
