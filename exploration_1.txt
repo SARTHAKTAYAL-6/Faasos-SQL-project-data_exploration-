@@ -29,7 +29,7 @@ group by driver_id;
 select roll_id, count(roll_id) from 
 customer_orders where order_id in 
 ( select order_id from
-(select ",case when cancellation in ('Cancellation', 'Customer Cancellation') then 'c' else 'nc' end as order_cancel_details from driver_order)a 
+(select *,case when cancellation in ('Cancellation', 'Customer Cancellation') then 'c' else 'nc' end as order_cancel_details from driver_order)a 
 where order_cancel_details= "nc")
  group by roll_id;
 
@@ -56,3 +56,4 @@ select order_id from
 where order_cancel_details='nc'))b 
 group by order_ id 
 )c)d where rnk=1;
+
